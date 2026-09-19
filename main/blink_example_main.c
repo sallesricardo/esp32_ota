@@ -16,10 +16,11 @@
 #include "driver/gpio.h"
 #include "esp_netif.h"
 #include "esp_timer.h"
+#include "server_cert.h"
 
 // --- CONFIGURAÇÕES ---
 // Substitua pelo IP da sua máquina na rede local (ex: 192.168.1.10)
-#define MANIFEST_URL   "http://192.168.15.50:8070/manifest.json"
+#define MANIFEST_URL   "https://192.168.15.50:8070/manifest.json"
 
 static const char *TAG = "blink_ota";
 
@@ -103,6 +104,7 @@ bool check_for_update(char *ota_url, size_t url_size)
 
     esp_http_client_config_t config = {
         .url = MANIFEST_URL,
+        .cert_pem = (const char *)esp32_cert_pem,
     };
 
     esp_http_client_handle_t client = esp_http_client_init(&config);
@@ -230,8 +232,14 @@ void ota_task(void *pvParameter)
 
             ESP_LOGI(TAG, "Baixando: %s", ota_url);
 
-            esp_http_client_config_t http_config = { .url = ota_url };
-            esp_https_ota_config_t ota_config = { .http_config = &http_config };
+            esp_http_client_config_t http_config = {
+                .url = ota_url,
+                .cert_pem = (const char *)esp32_cert_pem,
+            };
+
+            esp_https_ota_config_t ota_config = {
+                .http_config = &http_config
+            };
 
             esp_err_t ret = esp_https_ota(&ota_config);
 
@@ -328,8 +336,8 @@ static esp_err_t root_handler(httpd_req_t *req)
         "<p><b>IDF:</b> %s</p>"
         "<p><b>Status:</b> %s</p>"
         "</div>"
-        "<button class='btn-ota' onclick=\"location.href='/ota'\">🔄 Trigger OTA Update</button>"
-        "<button class='btn-restart' onclick=\"location.href='/restart'\">🔃 Restart Device</button>"
+        "<button class='btn-ota' onclick=\"location.href='/ota'\">Trigger OTA Update</button>"
+        "<button class='btn-restart' onclick=\"location.href='/restart'\">Restart Device</button>"
         "<hr><p><a href='/status'>View JSON Status</a></p>"
         "</body></html>",
         app_desc->version, app_desc->date, app_desc->time,
