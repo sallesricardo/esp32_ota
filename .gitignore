@@ -5,6 +5,7 @@ dependencies.lock
 sdkconfig.old
 tmp/
 out/
+.cache/
 .vscode/
 .grok/
 .clangd
@@ -13,3 +14,9 @@ out/
 .pydevproject
 .settings/
 .metadata/
+server_cert.pem
+server_key.pem
+esp32_cert.pem
+server_cert.h
+*.bin
+*.pyc

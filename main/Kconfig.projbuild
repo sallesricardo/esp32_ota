@@ -50,13 +50,13 @@ menu "Example Configuration"
 
         config WIFI_SSID
             string "Wi-Fi SSID"
-            default "Valfenda"
+            default "myssid"
             help
                 SSID da rede Wi-Fi que o dispositivo deve se conectar.
 
         config WIFI_PASSWORD
             string "Wi-Fi Password"
-            default "bicicletaferrada"
+            default "mypassword"
             help
                 Senha da rede Wi-Fi definida em WIFI_SSID.
 

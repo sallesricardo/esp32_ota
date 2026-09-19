@@ -1,4 +1,65 @@
-CONFIG_BLINK_LED_GPIO=y
+# This file was generated using idf.py save-defconfig or menuconfig [D] key. It can be edited manually.
+# Espressif IoT Development Framework (ESP-IDF) 6.0.1 Project Minimal Configuration
+#
+# default:
+CONFIG_IDF_TARGET="esp32s3"
+
+#
+# Bootloader config
+#
+
+#
+# Application Rollback
+#
+CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE=y
+# end of Application Rollback
+# end of Bootloader config
+
+#
+# Serial flasher config
+#
+CONFIG_ESPTOOLPY_FLASHSIZE_16MB=y
+# end of Serial flasher config
+
+#
+# Partition Table
+#
+CONFIG_PARTITION_TABLE_CUSTOM=y
+CONFIG_PARTITION_TABLE_CUSTOM_FILENAME="partitions_two_ota.csv"
+# end of Partition Table
+
+#
+# Example Configuration
+#
 CONFIG_BLINK_GPIO=15
-CONFIG_WIFI_SSID="Valfenda"
-CONFIG_WIFI_PASSWORD="bicicletaferrada"
+
+#
+# Wi-Fi Configuration
+#
+CONFIG_WIFI_SSID="myssid"
+CONFIG_WIFI_PASSWORD="mypassword"
+# end of Wi-Fi Configuration
+# end of Example Configuration
+
+#
+# Component config
+#
+
+#
+# ESP HTTPS OTA
+#
+CONFIG_ESP_HTTPS_OTA_ALLOW_HTTP=y
+# end of ESP HTTPS OTA
+
+#
+# ESP System Settings
+#
+CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ_240=y
+# end of ESP System Settings
+
+#
+# ESP Timer (High Resolution Timer)
+#
+CONFIG_ESP_TIMER_PROFILING=y
+# end of ESP Timer (High Resolution Timer)
+# end of Component config
