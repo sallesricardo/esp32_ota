@@ -1,0 +1,15 @@
+build/
+sdkconfig
+managed_components/
+dependencies.lock
+sdkconfig.old
+tmp/
+out/
+.vscode/
+.grok/
+.clangd
+.project
+.cproject
+.pydevproject
+.settings/
+.metadata/
