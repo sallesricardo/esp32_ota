@@ -1,11 +1,7 @@
 idf_component_register(
-    SRCS "blink_example_main.c"
-    INCLUDE_DIRS "."
-    REQUIRES
-        driver
-        esp_driver_gpio
-        nvs_flash
-        esp_wifi
+    SRCS "ota.c"
+    INCLUDE_DIRS "include"
+    REQUIRES 
         esp_https_ota
         esp_http_client
         esp_http_server
@@ -13,5 +9,4 @@ idf_component_register(
         esp_app_format
         cjson
         esp_timer
-        ota
 )
