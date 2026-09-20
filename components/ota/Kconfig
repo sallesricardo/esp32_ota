@@ -1,0 +1,26 @@
+menu "OTA Configuration"
+
+    config OTA_ENABLED
+        bool "Habilita atualização via OTA"
+        default n
+        help
+            Se marcado, habilita o modo de atualização via OTA.
+
+    menu "OTA Configuration"
+        depends on OTA_ENABLED
+
+        config OTA_MANIFEST_URL
+            string "Url para o arquivo do manifest.json da atualização"
+            default "https://192.168.1.1:8070/manifest.json"
+            help
+                URL do para o manifest.json que contem informações da atualização.
+
+        config OTA_HTTP_SERVER_TRIGGER_UPDATE
+            int "Porta do servidor HTTP para disparar atualização"
+            default 80
+            help
+                Porta para o servidor http que dispara a atualização.
+
+    endmenu
+
+endmenu

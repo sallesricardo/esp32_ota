@@ -1,18 +1,13 @@
-#include <string.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/event_groups.h"
-#include "esp_system.h"
 #include "esp_wifi.h"
 #include "esp_event.h"
 #include "esp_log.h"
 #include "nvs_flash.h"
 #include "esp_ota_ops.h"
-#include "esp_http_server.h"
-#include "cJSON.h"
 #include "driver/gpio.h"
 #include "esp_netif.h"
-#include "esp_timer.h"
 #include "ota.h"
 
 static const char *TAG = "blink_ota";
@@ -101,62 +96,10 @@ void blink_task(void *pvParameter)
     }
 }
 
-void print_ota_info(void)
+
+bool validate_after_update(void)
 {
-    const esp_partition_t *running = esp_ota_get_running_partition();
-    esp_ota_img_states_t state;
-
-    if (running) {
-        ESP_LOGI(TAG, "Partição atual: %s (endereço: 0x%x)",
-                 running->label, running->address);
-
-        if (esp_ota_get_state_partition(running, &state) == ESP_OK) {
-            const char *state_str;
-            switch(state) {
-                case ESP_OTA_IMG_VALID: state_str = "VALID"; break;
-                case ESP_OTA_IMG_PENDING_VERIFY: state_str = "PENDING_VERIFY"; break;
-                case ESP_OTA_IMG_INVALID: state_str = "INVALID"; break;
-                case ESP_OTA_IMG_ABORTED: state_str = "ABORTED"; break;
-                default: state_str = "UNKNOWN"; break;
-            }
-            ESP_LOGI(TAG, "Estado: %s", state_str);
-        }
-    }
-
-    // Mostra próxima partição para OTA
-    const esp_partition_t *next = esp_ota_get_next_update_partition(NULL);
-    if (next) {
-        ESP_LOGI(TAG, "Próxima partição OTA: %s", next->label);
-    }
-}
-
-// Função para verificar e confirmar a nova versão
-void check_and_confirm_ota(void)
-{
-    const esp_partition_t *running = esp_ota_get_running_partition();
-    esp_ota_img_states_t ota_state;
-
-    if (esp_ota_get_state_partition(running, &ota_state) == ESP_OK) {
-        ESP_LOGI(TAG, "Estado da partição atual: %d", ota_state);
-        if (ota_state == ESP_OTA_IMG_PENDING_VERIFY) {
-            ESP_LOGI(TAG, "Nova versão detectada. Estado: PENDING_VERIFY");
-
-            // AQUI você faz seus testes de sanity check
-            // Ex: verificar se periféricos funcionam, se conecta no servidor, etc.
-
-            bool all_tests_passed = true; // Substitua por testes reais
-
-            if (all_tests_passed) {
-                ESP_LOGI(TAG, "✓ Testes passaram. Confirmando nova versão...");
-                esp_ota_mark_app_valid_cancel_rollback();
-            } else {
-                ESP_LOGE(TAG, "✗ Testes falharam. Iniciando rollback...");
-                esp_ota_mark_app_invalid_rollback_and_reboot();
-            }
-        } else {
-            ESP_LOGI(TAG, "Versão atual já está confirmada (estado: %d)", ota_state);
-        }
-    }
+    return true;
 }
 
 // --- APP MAIN ---
@@ -192,5 +135,5 @@ void app_main(void)
     xTaskCreate(&ota_task, "ota_task", configMINIMAL_STACK_SIZE * 8, (void *) ota_params, 5, NULL);
 
     vTaskDelay(1000 / portTICK_PERIOD_MS);
-    check_and_confirm_ota();
+    check_and_confirm_ota(validate_after_update);
 }

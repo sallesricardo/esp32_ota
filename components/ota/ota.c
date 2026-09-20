@@ -6,9 +6,7 @@
 #include "esp_ota_ops.h"
 #include "esp_http_client.h"
 #include "esp_https_ota.h"
-#include "esp_app_format.h"
 #include "esp_http_server.h"
-#include "esp_event.h"
 #include "esp_log.h"
 #include "esp_timer.h"
 #include "cJSON.h"
@@ -20,11 +18,15 @@ static const char *TAG = "OTA";
 static EventGroupHandle_t s_ota_event_group;
 static httpd_handle_t s_http_server = NULL;
 
-// --- CONFIGURAÇÕES ---
-// Substitua pelo IP da sua máquina na rede local (ex: 192.168.1.10)
-#define MANIFEST_URL   "https://192.168.15.50:8070/manifest.json"
+static char s_last_ota_status[128] = "Idle";
 
-#define OTA_REQUEST_BIT BIT1
+// --- CONFIGURAÇÕES ---
+#define MANIFEST_URL        CONFIG_OTA_MANIFEST_URL
+#define OTA_REQUEST_BIT     BIT1
+
+#ifndef CONFIG_OTA_ENABLED
+    #define CONFIG_OTA_ENABLED 0
+#endif
 
 bool check_for_update(char *ota_url, size_t url_size)
 {
@@ -220,6 +222,7 @@ static esp_err_t root_handler(httpd_req_t *req)
 void start_http_server(void)
 {
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
+    config.server_port = CONFIG_OTA_HTTP_SERVER_TRIGGER_UPDATE;
     config.lru_purge_enable = true;
     config.max_uri_handlers = 5;
 
@@ -241,6 +244,12 @@ void start_http_server(void)
 void ota_task(void *pvParameter)
 {
     ESP_LOGI(TAG, "Iniciando tarefa de OTA...");
+
+    if (!CONFIG_OTA_ENABLED){
+        ESP_LOGI(TAG, "=== OTA desabilitado! ===");
+        vTaskDelete(NULL);
+        return;
+    }
 
     s_ota_event_group = xEventGroupCreate();
 
@@ -300,5 +309,63 @@ void ota_task(void *pvParameter)
                 snprintf(s_last_ota_status, sizeof(s_last_ota_status), "OTA failed: %s", esp_err_to_name(ret));
             }
         }
+    }
+}
+
+// Função para verificar e confirmar a nova versão
+void check_and_confirm_ota(bool (*callback) (void))
+{
+    const esp_partition_t *running = esp_ota_get_running_partition();
+    esp_ota_img_states_t ota_state;
+
+    if (esp_ota_get_state_partition(running, &ota_state) == ESP_OK) {
+        ESP_LOGI(TAG, "Estado da partição atual: %d", ota_state);
+        if (ota_state == ESP_OTA_IMG_PENDING_VERIFY) {
+            ESP_LOGI(TAG, "Nova versão detectada. Estado: PENDING_VERIFY");
+
+            // AQUI você faz seus testes de sanity check
+            // Ex: verificar se periféricos funcionam, se conecta no servidor, etc.
+
+            bool all_tests_passed = callback(); // Substitua por testes reais
+
+            if (all_tests_passed) {
+                ESP_LOGI(TAG, "✓ Testes passaram. Confirmando nova versão...");
+                esp_ota_mark_app_valid_cancel_rollback();
+            } else {
+                ESP_LOGE(TAG, "✗ Testes falharam. Iniciando rollback...");
+                esp_ota_mark_app_invalid_rollback_and_reboot();
+            }
+        } else {
+            ESP_LOGI(TAG, "Versão atual já está confirmada (estado: %d)", ota_state);
+        }
+    }
+}
+
+void print_ota_info(void)
+{
+    const esp_partition_t *running = esp_ota_get_running_partition();
+    esp_ota_img_states_t state;
+
+    if (running) {
+        ESP_LOGI(TAG, "Partição atual: %s (endereço: 0x%x)",
+                 running->label, running->address);
+
+        if (esp_ota_get_state_partition(running, &state) == ESP_OK) {
+            const char *state_str;
+            switch(state) {
+                case ESP_OTA_IMG_VALID: state_str = "VALID"; break;
+                case ESP_OTA_IMG_PENDING_VERIFY: state_str = "PENDING_VERIFY"; break;
+                case ESP_OTA_IMG_INVALID: state_str = "INVALID"; break;
+                case ESP_OTA_IMG_ABORTED: state_str = "ABORTED"; break;
+                default: state_str = "UNKNOWN"; break;
+            }
+            ESP_LOGI(TAG, "Estado: %s", state_str);
+        }
+    }
+
+    // Mostra próxima partição para OTA
+    const esp_partition_t *next = esp_ota_get_next_update_partition(NULL);
+    if (next) {
+        ESP_LOGI(TAG, "Próxima partição OTA: %s", next->label);
     }
 }
